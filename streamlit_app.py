@@ -11,11 +11,7 @@ st.sidebar.title("🧳 Traveler Info")
 origin = st.sidebar.text_input("From (IATA Code)", value="BOM")
 destination = st.sidebar.text_input("To (IATA Code)", value="JFK")
 departure_date = st.sidebar.date_input("Departure Date")
-passport_country = st.selectbox(
-    "Select your nationality",
-    ["India", "United States", "Mexico", "Brazil", "United Kingdom", "Germany"]
-)
-
+passport_country = st.selectbox("Select your nationality",["India", "United States", "Mexico", "Brazil", "United Kingdom", "Germany"])
 has_us_visa = False  # default
 
 if passport_country != "United States":
