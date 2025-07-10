@@ -11,8 +11,13 @@ st.sidebar.title("🧳 Traveler Info")
 origin = st.sidebar.text_input("From (IATA Code)", value="BOM")
 destination = st.sidebar.text_input("To (IATA Code)", value="JFK")
 departure_date = st.sidebar.date_input("Departure Date")
-passport_country = st.sidebar.selectbox("Passport Country", ["IND", "USA"])
-has_us_visa = st.sidebar.checkbox("Valid US Visa?", value=False)
+passport_country = st.selectbox("Select your nationality",["India", "United States", "Mexico", "Brazil", "United Kingdom", "Germany"])
+has_us_visa = False  # default
+
+# Only show the US visa checkbox if the passport is not US
+if passport_country != "United States":
+has_us_visa = st.checkbox("Do you have a valid US visa?")
+
 
 st.title("🌐 Visa-Safe Flight Search")
 st.write("This tool checks visa safety of your flight routes based on layovers.")
