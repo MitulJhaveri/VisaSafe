@@ -1,84 +1,89 @@
 
-# streamlit_app.py
-# ✈️ Visa-Safe Flight Route Checker using Amadeus API
-
 import streamlit as st
 import requests
+from datetime import datetime
 
-# --- Sidebar Inputs ---
-st.sidebar.title("🧳 Traveler Info")
-
-origin = st.sidebar.text_input("From (IATA Code)", value="BOM")
-destination = st.sidebar.text_input("To (IATA Code)", value="JFK")
-departure_date = st.sidebar.date_input("Departure Date")
-passport_country = st.selectbox("Select your nationality",["India", "United States", "Mexico", "Brazil", "United Kingdom", "Germany"])
-has_us_visa = False  # default
-
-if passport_country != "United States":
-    has_us_visa = st.checkbox("Do you have a valid US visa?")
-
-
-
-st.title("🌐 Visa-Safe Flight Search")
+# Title
+st.set_page_config(page_title="VisaSafe Flight Search", page_icon="🌍")
+st.markdown("# 🌍 Visa-Safe Flight Search")
 st.write("This tool checks visa safety of your flight routes based on layovers.")
 
-# --- API Credentials ---
+# User input
+passport_country = st.selectbox(
+    "Select your nationality",
+    ["India", "United States", "Mexico", "Brazil", "United Kingdom", "Germany"]
+)
+
+has_us_visa = False
+if passport_country != "United States":
+    has_us_visa = st.checkbox("✅ Do you have a valid US visa?")
+
+origin = st.text_input("Departure Airport IATA Code (e.g., BOM)")
+destination = st.text_input("Destination Airport IATA Code (e.g., JFK)")
+
+search = st.button("Search Visa-Safe Routes")
+
+# Amadeus API credentials from secrets
 client_id = st.secrets["client_id"]
 client_secret = st.secrets["client_secret"]
 
-# --- Run search ---
-if st.sidebar.button("Search Flights"):
-    # Step 1: Get token
-    auth_url = "https://test.api.amadeus.com/v1/security/oauth2/token"
-    auth_data = {
+# Access token request
+def get_access_token():
+    url = "https://test.api.amadeus.com/v1/security/oauth2/token"
+    headers = {"Content-Type": "application/x-www-form-urlencoded"}
+    data = {
         "grant_type": "client_credentials",
         "client_id": client_id,
         "client_secret": client_secret
     }
-    try:
-        token = requests.post(auth_url, data=auth_data).json()["access_token"]
-    except:
-        st.error("❌ Failed to get Amadeus access token. Check credentials.")
-        st.stop()
+    response = requests.post(url, headers=headers, data=data)
+    return response.json().get("access_token")
 
-    # Step 2: Call Amadeus flight search
-    search_url = "https://test.api.amadeus.com/v2/shopping/flight-offers"
-    headers = {"Authorization": f"Bearer {token}"}
-    params = {
-        "originLocationCode": origin.strip().upper(),
-        "destinationLocationCode": destination.strip().upper(),
-        "departureDate": str(departure_date),
-        "adults": 1,
-        "max": 3
-    }
+# Sample visa logic
+def visa_safe_route(route, passport, has_us_visa):
+    risky_airports = ["CDG", "FRA", "AMS"]
+    exemptions = ["US"] if has_us_visa else []
+    for stop in route:
+        if stop in risky_airports and "US" not in exemptions:
+            return False
+    return True
 
-    response = requests.get(search_url, headers=headers, params=params)
-    data = response.json()
+# Search flights and check visa logic
+if search and origin and destination:
+    st.info("🔍 Checking visa safety for route...")
 
-    if "data" not in data:
-        st.error("❌ No flights found or API error.")
-        st.json(data)
-        st.stop()
+    token = get_access_token()
+    if not token:
+        st.error("❌ Failed to authenticate with Amadeus API.")
+    else:
+        headers = {"Authorization": f"Bearer {token}"}
+        params = {
+            "originLocationCode": origin,
+            "destinationLocationCode": destination,
+            "departureDate": datetime.now().date().isoformat(),
+            "adults": 1,
+            "max": 3
+        }
+        response = requests.get(
+            "https://test.api.amadeus.com/v2/shopping/flight-offers",
+            headers=headers,
+            params=params
+        )
+        data = response.json()
 
-    # Step 3: Process flight options
-    for idx, offer in enumerate(data["data"], start=1):
-        layovers = []
-        flags = []
-        for itinerary in offer.get("itineraries", []):
-            for segment in itinerary.get("segments", []):
-                arrival = segment["arrival"]["iataCode"]
-                layovers.append(arrival)
-                if arrival == "IST" and passport_country == "IND" and not has_us_visa:
-                    flags.append("⚠️ Turkish transit visa required at IST")
-                elif arrival == "AMS" and passport_country == "IND" and not has_us_visa:
-                    flags.append("⚠️ Schengen visa required at AMS")
-                elif arrival == "CDG" and passport_country == "IND" and not has_us_visa:
-                    flags.append("⚠️ Schengen visa required at CDG")
+        if "data" in data:
+            for i, offer in enumerate(data["data"]):
+                route = []
+                for segment in offer["itineraries"][0]["segments"]:
+                    route.append(segment["departure"]["iataCode"])
+                route.append(offer["itineraries"][0]["segments"][-1]["arrival"]["iataCode"])
 
-        st.subheader(f"✈️ Option {idx}")
-        st.markdown(" → ".join(layovers))
-        if flags:
-            for f in flags:
-                st.warning(f)
+                st.markdown(f"### ✈️ Option {i+1}")
+                st.write(" → ".join(route))
+
+                if visa_safe_route(route, passport_country, has_us_visa):
+                    st.success("✅ Visa-safe route")
+                else:
+                    st.error("⚠️ Potential visa issue in this route")
         else:
-            st.success("✅ Visa-safe route")
+            st.warning("No routes found. Try a different input.")
