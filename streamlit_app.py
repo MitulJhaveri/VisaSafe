@@ -18,8 +18,8 @@ st.title("🌐 Visa-Safe Flight Search")
 st.write("This tool checks visa safety of your flight routes based on layovers.")
 
 # --- API Credentials ---
-client_id = "YOUR_CLIENT_ID"
-client_secret = "YOUR_CLIENT_SECRET"
+client_id = st.secrets["client_id"]
+client_secret = st.secrets["client_secret"]
 
 # --- Run search ---
 if st.sidebar.button("Search Flights"):
