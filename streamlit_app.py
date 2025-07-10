@@ -2,6 +2,18 @@
 import streamlit as st
 import requests
 from datetime import datetime
+# Inject a bit of CSS to left-align all widgets
+st.markdown(
+    """
+    <style>
+        .block-container {
+            text-align: left;
+            padding-left: 2rem;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # Title
 st.set_page_config(page_title="VisaSafe Flight Search", page_icon="🌍")
