@@ -2,6 +2,23 @@
 import streamlit as st
 import requests
 from datetime import datetime
+
+st.markdown("""
+# ✈️ VisaSafe: Smart Route Checker for International Travelers
+
+🚧 **Prototype Disclaimer**  
+This is an early-stage prototype built by a solo developer to help travelers avoid visa-related surprises during international transit. It integrates with live flight data (via Amadeus) and applies basic visa safety logic based on your passport and visa status.
+
+⚠️ **Important:**  
+- This tool currently supports individual travel only  
+- Transit and visa rules are still being refined and may not cover all edge cases  
+- Do **not** rely solely on this tool for official immigration decisions
+
+✅ Your feedback is welcome and will help improve this tool over time!
+
+---
+""")
+
 # Inject a bit of CSS to left-align all widgets
 st.markdown(
     """
